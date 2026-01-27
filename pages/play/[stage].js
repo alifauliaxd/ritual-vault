@@ -8,7 +8,9 @@ export default function PlayStage() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState({ show: false, success: false, msg: '' });
 
+  // --- PERBAIKAN LOGIC SATPAM (STRICT MODE) ---
   useEffect(() => {
+    // 1. Cek Sesi Login
     if (!localStorage.getItem('vault_session')) {
       router.push('/');
       return;
@@ -18,7 +20,17 @@ export default function PlayStage() {
       const unlockedLevel = parseInt(localStorage.getItem('vault_level') || '1');
       const targetStage = parseInt(stage);
 
-      if (targetStage > unlockedLevel) {
+      // 2. Cek Apakah Sudah Tamat? (Level > 3)
+      // Kalau sudah tamat, dilarang masuk play lagi -> Lempar ke Leaderboard
+      if (unlockedLevel > 3) {
+        router.push('/leaderboard');
+        return;
+      }
+
+      // 3. Strict Mode (Dilarang Maju ATAU Mundur)
+      // Kalau level user 2, dia HARUS di /play/2.
+      // Kalau dia coba ke /play/1 (Mundur) atau /play/3 (Maju) -> Balikin ke Level Asli
+      if (targetStage !== unlockedLevel) {
         router.push(`/play/${unlockedLevel}`);
       }
     }
