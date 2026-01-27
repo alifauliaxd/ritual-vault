@@ -8,8 +8,13 @@ export default async function handler(req, res) {
     .select('username, duration_seconds, finished_at')
     .eq('week_id', currentWeek)
     .eq('status', 'completed')
-    .not('finished_at', 'is', null)
-    .order('finished_at', { ascending: true })
+    .not('duration_seconds', 'is', null) // Pastikan durasi tidak kosong
+    
+    // --- PERBAIKAN DI SINI ---
+    // Ubah 'finished_at' jadi 'duration_seconds'
+    // Ascending: true artinya dari angka terkecil (tercepat) ke terbesar
+    .order('duration_seconds', { ascending: true }) 
+    
     .limit(20);
 
   return res.status(200).json(data || []);
