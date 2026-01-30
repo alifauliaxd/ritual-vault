@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 export default function Home() {
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  // Tambahkan state modal
+  const [modal, setModal] = useState({ show: false, success: false, msg: '' }); 
   const router = useRouter();
 
   useEffect(() => {
@@ -16,23 +18,43 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch('/api/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username })
-    });
+    try {
+      const res = await fetch('/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      localStorage.setItem('vault_session', data.sessionId);
-      localStorage.setItem('vault_username', username);
+      // --- LOGIC BARU: Cek Rate Limit (429) ---
+      if (res.status === 429) {
+        setModal({
+          show: true,
+          success: false,
+          msg: data.error || "SYSTEM COOLDOWN ACTIVE. PLEASE WAIT."
+        });
+        setLoading(false);
+        return;
+      }
 
-      localStorage.setItem('vault_level', '1');
-      
-      router.push('/play/1'); 
-    } else {
-      alert("SYSTEM ERROR: " + data.error);
+      if (res.ok) {
+        localStorage.setItem('vault_session', data.sessionId);
+        localStorage.setItem('vault_username', username);
+        localStorage.setItem('vault_level', '1');
+        
+        router.push('/play/1'); 
+      } else {
+        // Tampilkan error pakai Modal, bukan Alert
+        setModal({ 
+            show: true, 
+            success: false, 
+            msg: "SYSTEM ERROR: " + (data.error || "UNKNOWN ERROR") 
+        });
+        setLoading(false);
+      }
+    } catch (err) {
+      setModal({ show: true, success: false, msg: "CONNECTION FAILED" });
       setLoading(false);
     }
   };
@@ -88,6 +110,37 @@ export default function Home() {
       <div className="mt-8 text-[10px] text-gray-500 font-mono text-center">
         <p>COPYRIGHT © 2026 Made with Love for RITUAL COMMUNITY.</p>
       </div>
+
+      {/* --- KOMPONEN MODAL POP-UP (VERSI SOLID BLACK) --- */}
+      {modal.show && (
+        // LAYER 1: Overlay (Layar Belakang) - Hitam Pekat
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.9)' }} // Pakai style biar paksa hitam
+        >
+          {/* LAYER 2: Kotak Pesan - Hitam Solid */}
+          <div 
+            className="border-2 border-[#00ff41] p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(0,255,65,0.4)] relative"
+            style={{ backgroundColor: '#000000' }} // INI KUNCINYA: Hitam Hex Solid
+          >
+            <h2 className={`text-2xl font-bold mb-4 border-b border-[#00ff41] pb-2 ${modal.success ? 'text-[#00ff41]' : 'text-red-500'}`}>
+              {modal.success ? "ACCESS GRANTED" : "SECURITY ALERT"}
+            </h2>
+            <p className="mb-8 text-white font-mono text-sm leading-relaxed">
+              {modal.msg}
+            </p>
+            {!modal.success && (
+              <button 
+                onClick={() => setModal({ ...modal, show: false })}
+                className="w-full border border-red-500 text-red-500 py-3 hover:bg-red-500 hover:text-black font-bold transition-all uppercase tracking-widest"
+              >
+                ACKNOWLEDGE
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

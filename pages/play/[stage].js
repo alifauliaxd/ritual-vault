@@ -8,7 +8,6 @@ export default function PlayStage() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState({ show: false, success: false, msg: '' });
 
-  // --- PERBAIKAN LOGIC SATPAM (STRICT MODE) ---
   useEffect(() => {
     // 1. Cek Sesi Login
     if (!localStorage.getItem('vault_session')) {
@@ -51,6 +50,17 @@ export default function PlayStage() {
         body: JSON.stringify({ sessionId, stage, answer })
       });
       const data = await res.json();
+
+      // MODIFIKASI: Handle Rate Limit (Status 429)
+      if (res.status === 429) {
+        setModal({ 
+            show: true, 
+            success: false, 
+            msg: data.message || "SYSTEM COOLDOWN ACTIVE. PLEASE WAIT." 
+        });
+        setLoading(false);
+        return;
+      }
 
       if (data.success) {
         setModal({ show: true, success: true, msg: "ACCESS GRANTED. LOADING NEXT MODULE..." });
@@ -98,7 +108,7 @@ export default function PlayStage() {
       <p className="mb-8 text-center max-w-md border-l-2 border-[#00ff41] pl-4 text-sm font-mono text-gray-300">
         {stage == 1 && "> CLUE: THE SURFACE IS A LIE. INSPECT THE SKELETON OF THIS REALITY."}
         {stage == 2 && "> CLUE: INVISIBLE WHISPERS FLOW IN THE NETWORK. LISTEN TO THE HEADERS."}
-        {stage == 3 && "> CLUE: A DIGITAL CRUMB REMAINS. DECODE THE ENCRYPTED MEMORY."}
+        {stage == 3 && "> CLUE: A DIGITAL CRUMB REMAINS. DECODE THE ENCRYPTED COOKIES."}
       </p>
 
       {stage == 1 && <div style={{ display: 'none' }} id="secret-clue">PASSWORD: Summ0n_The_B1ack_Cat</div>}
