@@ -35,7 +35,8 @@ export default function PlayStage() {
     }
   }, [stage]);
 
-  useEffect(() => { if (stage == 2) fetch('/api/hint'); }, [stage]);
+  useEffect(() => { 
+  if (stage == 2) fetch('/api/hint?t=' + Date.now()); }, [stage]);
   useEffect(() => { if (stage == 3) document.cookie = "vault_secret=UHVycmlmaWFibDNfQzBtcHV0ZQ==; path=/"; }, [stage]);
 
   const handleSubmit = async (e) => {
